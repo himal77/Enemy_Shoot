@@ -5,11 +5,26 @@ import math
 import turtle
 import os
 import random
+import pygame
+
+
+
+
+pygame.init()
+explosion = pygame.mixer.Sound("explosion.wav")
+laser = pygame.mixer.Sound("laser.wav")
+
+
 
 # set up the screen
 wn = turtle.Screen()
 wn.bgcolor("black")
 wn.title("Space invaders")
+wn.bgpic("background.gif")
+
+#Register the shapes
+turtle.register_shape("enemy.gif")
+turtle.register_shape("player.gif")
 
 # Draw border
 border_pen = turtle.Turtle()
@@ -24,17 +39,30 @@ for side in range(4):
     border_pen.lt(90)
 border_pen.hideturtle()
 
+#Set the score to zero
+score = 0
+
+#Draw the score
+score_pen = turtle.Turtle()
+score_pen.speed(0)
+score_pen.color("White")
+score_pen.penup()
+score_pen.setposition(-290, 270)
+scorestring = "Score: %s" %score
+score_pen.write(scorestring, False, align= "left", font=("Arial", 14, "normal"))
+score_pen.hideturtle()
+
 # Create the player turtle
 
 player = turtle.Turtle()
 player.color("blue")
-player.shape("triangle")
+player.shape("player.gif")
 player.penup()
 player.speed(0)
 player.setposition(0, -250)
 player.setheading(90)
 
-playerspeed = 15
+playerspeed = 25
 
 
 
@@ -50,7 +78,7 @@ for i in range(number_of_enemies):
 
 for enemy in enemies:
     enemy.color("red")
-    enemy.shape("circle")
+    enemy.shape("enemy.gif")
     enemy.penup()
     enemy.speed(0)
     x = random.randint(-200, 200)
@@ -70,7 +98,7 @@ bullet.setheading(90)
 bullet.shapesize(0.5, 0.5)
 bullet.hideturtle()
 
-bulletspeed = 20
+bulletspeed = 30
 
 #Define bullet state
 #ready - ready to fire
@@ -98,6 +126,7 @@ def fire_bullet():
     #Declare bulletstate as a global if it needs changed
     global bulletstate
     if bulletstate == "ready":
+        laser.play()
         bulletstate = "fire"
         #Move the bullet just above from the player
         x = player.xcor()
@@ -129,25 +158,35 @@ while True:
         enemy.setx(x)
 
         #Move the enemy back and down
-        if enemy.xcor() > 290:
-            y = enemy.ycor()
-            y -= 40
+        if enemy.xcor() > 275:
+            #Moves down all the enemies
+            for e in enemies:
+                y = e.ycor()
+                y -= 40
+                e.sety(y)
+            #Change direction
             enemyspeed *= -1
-            enemy.sety(y)
 
-        if enemy.xcor() < -290:
-            y = enemy.ycor()
-            y -= 40
+        if enemy.xcor() < -275:
+            for e in enemies:
+                y = e.ycor()
+                y -= 40
+                e.sety(y)
             enemyspeed *= -1
-            enemy.sety(y)
 
         if isCollsion(bullet, enemy):
+            explosion.play()
             #Reset the bullet
             bullet.hideturtle()
             bulletstate = "ready"
             bullet.setposition(0, -400)
             #reset the enemy
             enemy.setposition(-200, 250)
+            #update the score
+            score += 10
+            scorestring = "Score: %s" %score
+            score_pen.clear()
+            score_pen.write(scorestring, False, align= "left", font=("Arial", 14, "normal"))
 
         if isCollsion(player, enemy):
              player.hideturtle()
@@ -163,6 +202,7 @@ while True:
 
     #Check to see if the bullet has gone to the top
     if bullet.ycor() > 275:
+        explosion.play()
         bullet.hideturtle()
         bulletstate = "ready"
 
